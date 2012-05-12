@@ -4,7 +4,7 @@ Donate link: http://www.optify.net/
 Tags: visitor analytics, visitor tracking, lead scoring, ip lookup, campaign tracking, website intelligence, lead intelligence, website analytics, seo reporting, salesforce integration
 Requires at least: 2.6
 Tested up to: 3.3.2
-Stable tag: 1.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,12 +12,12 @@ Optify's plugin provides marketers with seamless integration between your conten
 
 == Description ==
 
-Optify harnesses the power of inbound marketing, attracting likely customers instead of pushing your message on questionable targets.  With Optify for Wordpress running, you’ll be able to accomplish the following:
+Optify harnesses the power of inbound marketing, attracting likely customers instead of pushing your message on questionable targets.  With Optify for Wordpress running, you'll be able to accomplish the following:
 * Drive more traffic to your site and attract more leads with SEO and social media
 * Capture lead details from your website and Facebook
 * Arm your sales and marketing teams with visitor intelligence, lead scoring and prospect alerts
 * Track, report and share results
-In just seconds, Optify’s Wordpress Plugin begins capturing information and intelligence on website visitors.
+In just seconds, Optify's Wordpress Plugin begins capturing information and intelligence on website visitors.
 
 
 == Installation ==
@@ -58,7 +58,9 @@ Please contact Optify via support here: http://help.optify.net/requests/anonymou
 
 == Changelog ==
 
+= 1.0.1 =
+* Cosmetic changes to the Wordpress listing
+
 = 1.0 =
 * Initial Optify Plugin
-
 
