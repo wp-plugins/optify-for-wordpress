@@ -8,15 +8,17 @@ Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Optify's plugin provides marketers with seamless integration between your content management system and the Optify B2B Inbound Marketing Platform.
+Optify's plugin provides marketers with seamless integration between WordPress and the Optify B2B Inbound Marketing Platform.
 
 == Description ==
 
 Optify harnesses the power of inbound marketing, attracting likely customers instead of pushing your message on questionable targets.  With Optify for Wordpress running, you'll be able to accomplish the following:
-* Drive more traffic to your site and attract more leads with SEO and social media
-* Capture lead details from your website and Facebook
-* Arm your sales and marketing teams with visitor intelligence, lead scoring and prospect alerts
-* Track, report and share results
+
+*   Drive more traffic to your site and attract more leads with SEO and social media
+*   Capture lead details from your website and Facebook
+*   Arm your sales and marketing teams with visitor intelligence, lead scoring and prospect alerts
+*   Track, report and share results
+
 In just seconds, Optify's Wordpress Plugin begins capturing information and intelligence on website visitors.
 
 
@@ -59,8 +61,13 @@ Please contact Optify via support here: http://help.optify.net/requests/anonymou
 == Changelog ==
 
 = 1.0.1 =
-* Cosmetic changes to the Wordpress listing
+*   Cosmetic changes to the Wordpress listing
 
 = 1.0 =
-* Initial Optify Plugin
+*   Initial Optify Plugin
 
+== Upgrade Notice ==
+
+= 1.0.1 - Cosmetic changes to the Wordpress listing =
+
+= 1.0 - Initial Optify Plugin =
