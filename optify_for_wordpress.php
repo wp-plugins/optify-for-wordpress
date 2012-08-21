@@ -93,6 +93,7 @@ function optify_status_check()
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 	curl_setopt($ch, CURLOPT_POST, true);
 	// Only post the URL parameter.  This will never create an acccount and only checks for existence.
 	$data = 'URL=http://'.$_SERVER['HTTP_HOST'];
