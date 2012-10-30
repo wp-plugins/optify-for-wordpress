@@ -3,7 +3,7 @@
 Plugin Name: Optify for Wordpress
 Plugin URI: http://www.optify.net/
 Description: The Optify CMS plugin will allow website managers (they do not need to have technical expertise) to quickly, easily, and seamlessly track traffic and leads to their website using the combination of the plugin and the Optify Application.
-Version: 1.0
+Version: 1.1
 Author: Optify Development
 Author URI: http://www.optify.net/
 License: GPL
@@ -30,21 +30,78 @@ add_action('wp_footer', 'optify_script_footer');
 // register the plugin functions with wordpress
 if ( is_admin() )
 {
-        /* Call the html code */
-        add_action('admin_menu', 'optify_for_Wordpress');
-        
-        // Add a global admin message if Optify is installed but not registered.
-        optify_admin_warnings();
-        
-		// add a settings link on the plugin list page.
-        add_filter("plugin_action_links_" . plugin_basename(__FILE__), 'optify_plugin_settings_link' );
-        
-        // if there is a form post with the optify_email attribute, then let's do the "data insert".
-        if(!empty($_POST["optify_email"]))
-        {
-        	optify_data_insert();
-        }
+
+  /* Call the html code */
+  add_action('admin_menu', 'optify_for_Wordpress');
+
+  // Add a global admin message if Optify is installed but not registered.
+  optify_admin_warnings();
+
+  // add a settings link on the plugin list page.
+  add_filter("plugin_action_links_" . plugin_basename(__FILE__), 'optify_plugin_settings_link' );
+
+  // if there is a form post with the optify_email attribute, then let's do the "data insert".
+  if(!empty($_POST["optify_email"]) || !empty($_POST["optify_token"]))
+  {
+    optify_data_insert();
+  }
+  else if(!empty($_POST["new_optify_token"]) && strlen($_POST["new_optify_token"]) == 8)
+  {
+    $post_forms = "on";
+    if(empty($_POST["post_forms"]))
+      $post_forms = "";
+    
+    global $wpdb;
+    $table_name = $wpdb->prefix . "optify_form";
+    $wpdb->query("UPDATE $table_name SET optify_token='{$_POST["new_optify_token"]}', post_forms='{$post_forms}'");
+  }
+}else{
+// not in admin.  will submit forms if setting is yes.
+  if(!empty($_POST))
+  {
+    if(preg_match("#@[^.]+[.]#", print_r($_POST, true)))
+    {
+      global $wpdb;
+      $table_name = $wpdb->prefix . "optify_form";
+      $row = $wpdb->get_row("SELECT optify_token FROM {$table_name} WHERE post_forms = 'on'");
+      if(!empty($row->optify_token))
+        post_to_optify($row->optify_token);
+    }
+  }
 }
+
+
+
+function post_to_optify($token)
+{
+  $url = 'http://service.optify.net/v2/form';
+  $fields = array();
+    
+  // Add the extra fields required to proccess a form by Optify
+  $_POST["_opt_cid"] = $token;
+  $_POST["_opt_url"] = $_SERVER["HTTP_REFERER"];
+  $_POST["_opt_paget"] = preg_replace("#(http[s]*://[^/]+|[?&\#].*)#", "", $_SERVER["HTTP_REFERER"]);
+  $_POST["_opt_vid"] = $_COOKIE["_opt_vi_{$token}"];
+  $_POST["_opt_visit"] = $_COOKIE["_opt_vt_{$token}"];
+    
+  foreach($_POST as $key=>$value) {
+      $fields[] = "{$key}=" . urlencode($value);
+  }
+  
+  if(function_exists('curl_init')){
+    $ch = curl_init();
+    curl_setopt($ch,CURLOPT_URL,$url);
+    curl_setopt($ch,CURLOPT_POST,count($fields));
+    curl_setopt($ch,CURLOPT_POSTFIELDS,implode('&', $fields));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    if( ! $result = curl_exec($ch))
+    {
+        echo curl_error($ch);
+    }
+    curl_close($ch);
+  }
+}
+
 
 // A global error message variable to be displayed after form submission.
 $optify_error_message = "";
@@ -65,6 +122,7 @@ function optify_install()
   optify_email VARCHAR(55) DEFAULT '' NOT NULL,
   optify_setpwd int(20) NOT NULL,
   optify_token VARCHAR(55) DEFAULT NULL,
+  post_forms varchar(16) DEFAULT 'on',
   created_at timestamp,
   UNIQUE KEY id (id)
   );";
@@ -90,21 +148,23 @@ function optify_install()
 // Function to check whether an account is already created for this URL ( $_SERVER['HTTP_HOST'] )
 function optify_status_check()
 {
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-	curl_setopt($ch, CURLOPT_POST, true);
-	// Only post the URL parameter.  This will never create an acccount and only checks for existence.
-	$data = 'URL=http://'.$_SERVER['HTTP_HOST'];
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-	$output = curl_exec($ch);
-	curl_close($ch);
-	$js = json_decode($output);
-	if(!empty($js->status) && $js->status == "success")
-	{
-		return $js->token;
-	}
+  if(function_exists('curl_init')){
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_POST, true);
+    // Only post the URL parameter.  This will never create an acccount and only checks for existence.
+    $data = 'URL=http://'.$_SERVER['HTTP_HOST'];
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $output = curl_exec($ch);
+    curl_close($ch);
+    $js = json_decode($output);
+    if(!empty($js->status) && $js->status == "success")
+    {
+      return $js->token;
+    }
+  }
 	return "";
 	
 }
@@ -132,20 +192,33 @@ function optify_data_fetch()
 {
    global $wpdb;
    $table_name = $wpdb->prefix . "optify_form";
-   $res        = $wpdb->get_row("SELECT optify_token, created_at FROM $table_name ");
+   $res        = $wpdb->get_row("SELECT optify_token, created_at, post_forms FROM $table_name ");
    // If data exists in table then display a friendly page inviting the user to head over to Optify.
    if($res)
    {
-        if($res->optify_token != NULL){
-            echo "<div style='margin-top: 20px; margin-bottom: 20px; font-size: 16px;'>Your Optify for Wordpress plugin is active since: " . date("Y-m-d", strtotime($res->created_at)) . "</div>";
-		    echo "<div style='margin-bottom: 20px; font-size: 16px;'><a target='_new' href='http://dashboard.optify.net/'>Click to go to your Optify Dashboard</a></div>";
-		    echo "<a target='_new' href='http://dashboard.optify.net/'><img style='padding: 10px; border:4px solid #21759B' src='" . plugins_url('optify-screenshot-resize.png', __FILE__) . "' /></a><br /><br />";
-			echo "Please <a href='http://help.optify.net/requests/anonymous/new'>contact Optify Support</a> if you have any issues or questions regarding Optify or our Wordpress Plugin.</a>";
-        }
+     if($res->optify_token != NULL){
+		    echo "<iframe width='99%' height='800px' src='http://dashboard.optify.net/'></iframe><br /><br />";
+        echo "<div style='margin-top: 20px; margin-bottom: 20px; font-size: 16px;'>Your Optify for Wordpress plugin is active since: " . date("Y-m-d", strtotime($res->created_at));
+        echo " <a target='_new' href='http://dashboard.optify.net/'>Click to go to your Optify Dashboard</a><br /><br />";
+            
+        $token = $res->optify_token;
+        $post_forms = $res->post_forms;
+        echo "<form method='post' style='border: 1px solid #ddd; padding: 20px; width: 180px;'>
+            <b>Optify Settings</b><br /><br />
+            <label>Optify token</label><br />
+            <input type='text' name='new_optify_token' value='" . $token . "' size='9' /><br /><br />
+            <label>Post forms to Optify</label><br />
+            <input type='checkbox' name='post_forms' " . ($post_forms=="on"?"checked='checked' value='on'":"") . " /><br /><br />
+            <input style='background-color:#ddd;' type='submit' name='update_token' value='Update Optify Plugin' />
+            </form>";
+        echo "</div>";
+      }
    } else {
    	// Show the default registration form.
         include('optify_form.php');
    }
+   echo "<br />";
+   echo "<br />";
 }
 
 
@@ -154,38 +227,45 @@ function optify_data_insert(){
    global $optify_error_message;
    
    if(isset($_POST['submit'])){
+
         $f_name     =  ( isset($_POST['optify_fname']) ) ? trim($_POST['optify_fname']) : null;
         $l_name     = ( isset($_POST['optify_lname']) ) ? trim($_POST['optify_lname']) : null;
         $phone      = ( isset($_POST['optify_phone']) ) ? trim($_POST['optify_phone']) : null;
         $email      = ( isset($_POST['optify_email']) ) ? trim($_POST['optify_email']) : null;
         $set_psw    = ( isset($_POST['optify_setpwd']) ) ? trim($_POST['optify_setpwd']) : null;
-        //$token      = ( isset($_POST['optify_token']) ) ? trim($_POST['optify_token']) : null;
+        $token      = ( isset($_POST['optify_token']) ) ? trim($_POST['optify_token']) : null;
 
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POST, true);
-        $data = 'email='.$email.'&URL=http://'.$_SERVER['HTTP_HOST'].'&first_name='.$f_name.'&last_name='.$l_name.'&phone='.$phone.'&password='.$set_psw.'&cms=Wordpress';
-		
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-        $output = curl_exec($ch);
-        $info = curl_getinfo($ch);
-        curl_close($ch);
-        $result = json_decode($output);
-        $token = $result->token;
-        if(!empty($result->message))
-        	$optify_error_message = '<span style="color:red">'.$result->message.'</span>';
-       	else
-       		$optify_error_message = '<span style="color:red">Unable to connect to Optify registration service</span>';
-       	
-        if($result->status == 'success' || !empty($result->token)){
-        	 // Account successfully created or account already exists in Optify
-             $table_name = $wpdb->prefix . "optify_form";
-             $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
-                                         , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
+        $table_name = $wpdb->prefix . "optify_form";
+        
+        if(!empty($token)){
+          $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
+                                   , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
         }
 
+        if(function_exists('curl_init')){
+          $ch = curl_init();
+          curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
+          curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+          curl_setopt($ch, CURLOPT_POST, true);
+          $data = 'email='.$email.'&URL=http://'.$_SERVER['HTTP_HOST'].'&first_name='.$f_name.'&last_name='.$l_name.'&phone='.$phone.'&password='.$set_psw.'&cms=Wordpress';
+      
+          curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+          $output = curl_exec($ch);
+          $info = curl_getinfo($ch);
+          curl_close($ch);
+          $result = json_decode($output);
+          $token = $result->token;
+          if(!empty($result->message))
+            $optify_error_message = '<span style="color:red">'.$result->message.'</span>';
+          else
+            $optify_error_message = '<span style="color:red">Unable to connect to Optify registration service</span>';
+          
+          if($result->status == 'success' || !empty($result->token)){
+             // Account successfully created or account already exists in Optify
+               $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
+                                           , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
+          }
+        }
     }
 }
 //css script
@@ -256,9 +336,13 @@ function optify_admin_warnings()
 	{
 		function optify_warning()
 		{
-			echo "<div id='optify-warning' class='updated fade'><p><strong>".__('You\'re almost up and running with Optify.')."</strong> ";
-			echo sprintf(__('<a href="%1$s">Create your Optify Account here</a>!'), "options-general.php?page=Optify")."</p></div>";
-		}
+      if(!function_exists('curl_init')){
+        echo "<div id='optify-warning' class='updated fade'><p><strong>PHP curl is disabled by your ISP (internet service provider).  If you wish to use the Optify plugin, please contact your website system administrator to enable this feature.</strong></p></div>";
+      }else{
+        echo "<div id='optify-warning' class='updated fade'><p><strong>".__('You\'re almost up and running with Optify.')."</strong> ";
+        echo sprintf(__('<a href="%1$s">Create your Optify Account here</a>!'), "options-general.php?page=Optify")."</p></div>";
+      }
+    }
 		add_action('admin_notices', 'optify_warning');
 		return;
 	}
