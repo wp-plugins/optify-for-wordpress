@@ -197,6 +197,7 @@ function optify_data_fetch()
    if($res)
    {
      if($res->optify_token != NULL){
+        echo "<br /><a style='font-size:1.4em;' href='http://dashboard.optify.net/'>Visit the Optify Application</a><br /><br />";
 		    echo "<iframe width='99%' height='800px' src='http://dashboard.optify.net/'></iframe><br /><br />";
         echo "<div style='margin-top: 20px; margin-bottom: 20px; font-size: 16px;'>Your Optify for Wordpress plugin is active since: " . date("Y-m-d", strtotime($res->created_at));
         echo " <a target='_new' href='http://dashboard.optify.net/'>Click to go to your Optify Dashboard</a><br /><br />";

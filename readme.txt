@@ -54,8 +54,8 @@ Please contact Optify via support here: http://help.optify.net/requests/anonymou
 
 == Screenshots ==
 
-1. optify-screenshot-resize.png
-2. optify-wordpress-register.png
+1. Optify Application Home Page
+2. Optify Contact Detail Page
 
 
 == Changelog ==
