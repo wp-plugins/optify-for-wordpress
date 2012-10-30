@@ -3,8 +3,8 @@ Contributors: TommyOptify
 Donate link: http://www.optify.net/
 Tags: visitor analytics, visitor tracking, lead scoring, ip lookup, campaign tracking, website intelligence, lead intelligence, website analytics, seo reporting, salesforce integration
 Requires at least: 2.6
-Tested up to: 3.3.2
-Stable tag: 1.0.1
+Tested up to: 3.4.2
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,9 @@ Please contact Optify via support here: http://help.optify.net/requests/anonymou
 
 
 == Changelog ==
+
+= 1.1 =
+*   Introducing server side form processing.
 
 = 1.0.1 =
 *   Cosmetic changes to the Wordpress listing
