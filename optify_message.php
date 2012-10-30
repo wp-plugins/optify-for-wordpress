@@ -13,5 +13,4 @@ function optify_message(){
    exit();
 }
 optify_message();
-?>
 
