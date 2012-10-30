@@ -1,5 +1,17 @@
 function validation(){
-
+      
+      if(document.getElementById("optify_token") != null){
+        if(document.getElementById("optify_token").value != ""){
+          if(document.getElementById("optify_token").value.length == 8){
+            return true;
+          }else{
+            document.getElementById('error-msz-token').innerHTML = 'Token should be 8 characters';
+            document.getElementById("error-msz-token").style.display = "block";
+            return false;
+          }
+        }
+      }
+      
       var fname = document.getElementById('fname').value;
       if(trim(fname) == null || trim(fname) == ''){
           document.getElementById("error-msz-fname").style.display = "block";

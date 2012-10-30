@@ -53,7 +53,7 @@ if ( is_admin() )
     
     global $wpdb;
     $table_name = $wpdb->prefix . "optify_form";
-    $wpdb->query("UPDATE $table_name SET optify_token='{$_POST["new_optify_token"]}', post_forms='{$post_forms}'");
+    $wpdb->query("UPDATE $table_name SET optify_token='" . strtoupper($_POST["new_optify_token"]) . "', post_forms='{$post_forms}'");
   }
 }else{
 // not in admin.  will submit forms if setting is yes.
@@ -74,6 +74,7 @@ if ( is_admin() )
 
 function post_to_optify($token)
 {
+  $token = strtoupper($token);
   $url = 'http://service.optify.net/v2/form';
   $fields = array();
     
@@ -235,6 +236,7 @@ function optify_data_insert(){
         $email      = ( isset($_POST['optify_email']) ) ? trim($_POST['optify_email']) : null;
         $set_psw    = ( isset($_POST['optify_setpwd']) ) ? trim($_POST['optify_setpwd']) : null;
         $token      = ( isset($_POST['optify_token']) ) ? trim($_POST['optify_token']) : null;
+        $token = strtoupper($token);
 
         $table_name = $wpdb->prefix . "optify_form";
         

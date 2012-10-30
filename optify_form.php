@@ -51,7 +51,7 @@
              <div class="optify-label-input">
                 <div class="optify-label"><?php _e("Optify tracking token (8 characters)" ); ?></div>
                 <div class="optify-input"><input class="optify-inbox-box" id="optify_token" type="text" name="optify_token" value="" size="20"></div>
-                <div class="error123"><span class="error-msz" id="error-msz-pwd">This is Required</span></div>
+                <div class="error123"><span class="error-msz" id="error-msz-token">This is Required</span></div>
                 <div class="clear"></div>
             </div>
              <div class="optify-submit">
