@@ -5,7 +5,6 @@
       </div>
       <div class="optify-form">
          <form name="optifyform" method="post" action="" onsubmit="return validation();">
-             <input class="optify-inbox-box" type="hidden"  name="optify_token" value="Y" size="20">
             <div class="optify-label-input">
                 <div class="optify-label"><?php _e("First Name" ); ?><span class="optif-star">*</span></div>
                 <div class="optify-input"><input class="optify-inbox-box" id="fname" type="text" name="optify_fname" value="" size="20"></div>
@@ -39,6 +38,28 @@
              <div class="optify-submit">
                  <input class="optify-submit-button" type="submit" name="submit" value="<?php _e('Register for Optify!' ) ?>" />
              </div>
-         </form>
+<div class="clear">&nbsp;</div>
+<div class="clear">&nbsp;</div>
+<div class="clear">&nbsp;</div>
+<div class="clear">&nbsp;</div>
+<div class="clear">&nbsp;</div>
+
+      <div class="optify-subheader">
+             <b style="font-size:1.4em; color: #1B66B8;">Already have an Optify account?</b>
+      </div>
+<div class="clear">&nbsp;</div>
+             <div class="optify-label-input">
+                <div class="optify-label"><?php _e("Optify tracking token (8 characters)" ); ?></div>
+                <div class="optify-input"><input class="optify-inbox-box" id="optify_token" type="text" name="optify_token" value="" size="20"></div>
+                <div class="error123"><span class="error-msz" id="error-msz-token">This is Required</span></div>
+                <div class="clear"></div>
+            </div>
+             <div class="optify-submit">
+                 <input class="optify-submit-button" type="submit" name="submit" value="Submit" />
+             </div>
+
+
+
+             </form>
      </div>
  </div>
