@@ -3,7 +3,7 @@
 Plugin Name: Optify for Wordpress
 Plugin URI: http://www.optify.net/
 Description: The Optify CMS plugin will allow website managers (they do not need to have technical expertise) to quickly, easily, and seamlessly track traffic and leads to their website using the combination of the plugin and the Optify Application.
-Version: 1.1.2
+Version: 1.1.3
 Author: Optify Development
 Author URI: http://www.optify.net/
 License: GPL
@@ -217,21 +217,25 @@ function optify_data_fetch()
 {
   global $wpdb;
   global $optify_existing_token;
-  if(empty($optify_existing_token))
-    $optify_existing_token = optify_status_check(true);
+  $table_name = $wpdb->prefix . "optify_form";
+  $res        = $wpdb->get_row("SELECT optify_token, created_at, post_forms FROM $table_name ");
+  
+  if(empty($res->optify_token)){
+    if(empty($optify_existing_token))
+      $optify_existing_token = optify_status_check(true);
 
-  if(!empty($optify_existing_token))
-  {
-    $table_name = $wpdb->prefix . "optify_form";
-    $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
-    if(empty($row->id))
-      $wpdb->insert($table_name, array('optify_fname' => '', 'optify_lname' => '', 'optify_phone' => ''
-              , 'optify_email' => '', 'optify_setpwd' => '', 'optify_token' => $existing_token));
+    if(!empty($optify_existing_token))
+    {
+      $table_name = $wpdb->prefix . "optify_form";
+      $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
+      if(empty($row->id))
+        $wpdb->insert($table_name, array('optify_fname' => '', 'optify_lname' => '', 'optify_phone' => ''
+                , 'optify_email' => '', 'optify_setpwd' => '', 'optify_token' => $existing_token));
+      $res = $wpdb->get_row("SELECT optify_token, created_at, post_forms FROM $table_name ");
+    }
   }
-
-   global $wpdb;
-   $table_name = $wpdb->prefix . "optify_form";
-   $res        = $wpdb->get_row("SELECT optify_token, created_at, post_forms FROM $table_name ");
+   
+   
    // If data exists in table then display a friendly page inviting the user to head over to Optify.
    if($res)
    {
