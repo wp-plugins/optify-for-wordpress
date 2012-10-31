@@ -4,7 +4,7 @@ Donate link: http://www.optify.net/
 Tags: visitor analytics, visitor tracking, lead scoring, ip lookup, campaign tracking, website intelligence, lead intelligence, website analytics, seo reporting, salesforce integration
 Requires at least: 2.6
 Tested up to: 3.4.2
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,10 @@ Please contact Optify via support here: http://help.optify.net/requests/anonymou
 
 
 == Changelog ==
+
+= 1.1.2 =
+*   Handles upgrade more seamlessly.
+*   Passes page title as form title to Optify.
 
 = 1.1.1 =
 *   Handle token input instead of registration.
