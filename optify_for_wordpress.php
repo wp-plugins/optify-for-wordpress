@@ -81,7 +81,8 @@ function post_to_optify($token)
   // Add the extra fields required to proccess a form by Optify
   $_POST["_opt_cid"] = $token;
   $_POST["_opt_url"] = $_SERVER["HTTP_REFERER"];
-  $_POST["_opt_paget"] = preg_replace("#(http[s]*://[^/]+|[?&\#].*)#", "", $_SERVER["HTTP_REFERER"]);
+  if(empty($_POST["_opt_paget"]))
+    $_POST["_opt_paget"] = preg_replace("#(http[s]*://[^/]+|[?&\#].*)#", "", $_SERVER["HTTP_REFERER"]);
   $_POST["_opt_vid"] = $_COOKIE["_opt_vi_{$token}"];
   $_POST["_opt_visit"] = $_COOKIE["_opt_vt_{$token}"];
     
@@ -133,22 +134,44 @@ function optify_install()
 
   add_option("optify_db_version", $optify_db_version);
   
+  global $optify_existing_token;
   // At install time, see if we already have a token for this URL.
-  $existing_token = optify_status_check();
+  if(!empty($optify_existing_token))
+    $existing_token = $optify_existing_token;
+  else
+    $existing_token = optify_status_check();
   if(!empty($existing_token))
   {
   	// if we do have a token, add it to the existing config table.
   	$table_name = $wpdb->prefix . "optify_form";
-  	$wpdb->insert($table_name, array('optify_fname' => '', 'optify_lname' => '', 'optify_phone' => ''
-  						, 'optify_email' => '', 'optify_setpwd' => '', 'optify_token' => $existing_token));
+    $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
+    if(empty($row->id))
+      $wpdb->insert($table_name, array('optify_fname' => '', 'optify_lname' => '', 'optify_phone' => ''
+                , 'optify_email' => '', 'optify_setpwd' => '', 'optify_token' => $existing_token));
   
   }
 }
 
 
 // Function to check whether an account is already created for this URL ( $_SERVER['HTTP_HOST'] )
-function optify_status_check()
+function optify_status_check($verify_schema = false)
 {
+  global $wpdb;
+  if($verify_schema){
+    $plugin_data = get_plugin_data(ABSPATH . "wp-content/plugins/optify-for-wordpress/optify_for_wordpress.php");
+    $table_name = $wpdb->prefix . "optify_form";
+    $cols        = $wpdb->get_results("describe $table_name");
+    $post_forms_exists = false;
+    foreach($cols as $col_obj)
+      if($col_obj->Field == "post_forms")
+        $post_forms_exists = true;
+    if(! $post_forms_exists)
+    {
+      optify_uninstall();
+      optify_install();
+    }
+  }
+  
   if(function_exists('curl_init')){
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
@@ -173,8 +196,9 @@ function optify_status_check()
 
 function optify_uninstall()
 {
-  global $wpdb;
+  global $wpdb, $optify_existing_token;
   $table_name = $wpdb->prefix . "optify_form";
+  $optify_existing_token = optify_get_token_from_db();
   // remove the config table.
   $wpdb->query("DROP TABLE {$table_name}");
   require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -191,6 +215,20 @@ function optify_for_Wordpress_html_page() {
 
 function optify_data_fetch()
 {
+  global $wpdb;
+  global $optify_existing_token;
+  if(empty($optify_existing_token))
+    $optify_existing_token = optify_status_check(true);
+
+  if(!empty($optify_existing_token))
+  {
+    $table_name = $wpdb->prefix . "optify_form";
+    $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
+    if(empty($row->id))
+      $wpdb->insert($table_name, array('optify_fname' => '', 'optify_lname' => '', 'optify_phone' => ''
+              , 'optify_email' => '', 'optify_setpwd' => '', 'optify_token' => $existing_token));
+  }
+
    global $wpdb;
    $table_name = $wpdb->prefix . "optify_form";
    $res        = $wpdb->get_row("SELECT optify_token, created_at, post_forms FROM $table_name ");
@@ -241,8 +279,10 @@ function optify_data_insert(){
         $table_name = $wpdb->prefix . "optify_form";
         
         if(!empty($token)){
-          $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
-                                   , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
+          $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
+          if(empty($row->id))
+            $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
+                                     , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
         }
 
         if(function_exists('curl_init')){
@@ -265,7 +305,9 @@ function optify_data_insert(){
           
           if($result->status == 'success' || !empty($result->token)){
              // Account successfully created or account already exists in Optify
-               $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
+              $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
+              if(empty($row->id))
+                $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
                                            , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
           }
         }
@@ -294,14 +336,20 @@ function optify_script_footer()
                  $token = $res->optify_token;
             }?>
   <script type="text/javascript">
-       // Optify Wordpress Plugin
-       var _opt = _opt || [];
-       _opt.push([ 'view', '<?php echo $token;?>']);
-       (function() {
-             var scr = document.createElement('script'); scr.type = 'text/javascript'; scr.async = true;
-             scr.src = '//service.optify.net/opt-v2.js';
-             var other = document.getElementsByTagName('script')[0]; other.parentNode.insertBefore(scr, other);
-       })();
+  // Optify Wordpress Plugin version 1.1.2
+  var _opt = _opt || [];
+  _opt.push([ 'view', '<?php echo $token;?>']);
+  (function() {
+    var scr = document.createElement('script'); scr.type = 'text/javascript'; scr.async = true;
+    scr.src = '//service.optify.net/opt-v2.js';
+    var other = document.getElementsByTagName('script')[0]; other.parentNode.insertBefore(scr, other);
+  })();
+  setTimeout(function(){
+    for(var fi = 0; fi < document.forms.length; fi++){
+      if(document.forms[fi].innerHTML.indexOf("_opt_paget") < 0)
+        document.forms[fi].innerHTML  += "<input type='hidden' name='_opt_paget' value='" + document.title + "' />";
+    }
+  }, 2000);
   </script>
 	<?php
 	} 
