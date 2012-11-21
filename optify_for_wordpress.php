@@ -3,7 +3,7 @@
 Plugin Name: Optify for Wordpress
 Plugin URI: http://www.optify.net/
 Description: The Optify CMS plugin will allow website managers (they do not need to have technical expertise) to quickly, easily, and seamlessly track traffic and leads to their website using the combination of the plugin and the Optify Application.
-Version: 1.1.3
+Version: 1.1.4
 Author: Optify Development
 Author URI: http://www.optify.net/
 License: GPL
@@ -70,7 +70,18 @@ if ( is_admin() )
   }
 }
 
-
+function flatten(array $d){
+  $r = array(); $s = array(); $p = null; reset($d);
+  while(!empty($d)){$k = key($d); $el = $d[$k]; unset($d[$k]);  
+    if(is_array($el)){
+      if (!empty($d)) $s[] = array($d, $p);
+      $d = $el;
+      $p .= $k . '.';
+    }else $res[$p . $k] = $el;
+    if (empty($d) && !empty($s)) list($d, $p) = array_pop($s);
+  }
+  return $res;
+}
 
 function post_to_optify($token)
 {
@@ -79,14 +90,14 @@ function post_to_optify($token)
   $fields = array();
     
   // Add the extra fields required to proccess a form by Optify
-  $_POST["_opt_cid"] = $token;
-  $_POST["_opt_url"] = $_SERVER["HTTP_REFERER"];
-  if(empty($_POST["_opt_paget"]))
-    $_POST["_opt_paget"] = preg_replace("#(http[s]*://[^/]+|[?&\#].*)#", "", $_SERVER["HTTP_REFERER"]);
-  $_POST["_opt_vid"] = $_COOKIE["_opt_vi_{$token}"];
-  $_POST["_opt_visit"] = $_COOKIE["_opt_vt_{$token}"];
-    
-  foreach($_POST as $key=>$value) {
+  $opt_POST = flatten($_POST);
+  $opt_POST["_opt_cid"] = $token;
+  if(empty($opt_POST["_opt_paget"]))
+    $opt_POST["_opt_paget"] = preg_replace("#(http[s]*://[^/]+|[?&\#].*)#", "", $_SERVER["HTTP_REFERER"]);
+  $opt_POST["_opt_url"] = $_SERVER["HTTP_REFERER"];
+  $opt_POST["_opt_vid"] = $_COOKIE["_opt_vi_" . $opt_POST["_opt_cid"] ];
+  $opt_POST["_opt_visit"] = $_COOKIE["_opt_vt_" . $opt_POST["_opt_cid"] ];
+  foreach($opt_POST as $key=>$value) {
       $fields[] = "{$key}=" . urlencode($value);
   }
   
@@ -340,7 +351,7 @@ function optify_script_footer()
                  $token = $res->optify_token;
             }?>
   <script type="text/javascript">
-  // Optify Wordpress Plugin version 1.1.2
+  // Optify Wordpress Plugin version 1.1.4
   var _opt = _opt || [];
   _opt.push([ 'view', '<?php echo $token;?>']);
   (function() {
