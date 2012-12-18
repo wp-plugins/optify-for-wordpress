@@ -3,7 +3,7 @@
 Plugin Name: Optify for Wordpress
 Plugin URI: http://www.optify.net/
 Description: The Optify CMS plugin will allow website managers (they do not need to have technical expertise) to quickly, easily, and seamlessly track traffic and leads to their website using the combination of the plugin and the Optify Application.
-Version: 1.1.4
+Version: 1.1.5
 Author: Optify Development
 Author URI: http://www.optify.net/
 License: GPL
@@ -140,8 +140,7 @@ function optify_install()
   UNIQUE KEY id (id)
   );";
 
-  require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-  dbDelta($sql);
+  $wpdb->query($sql);
 
   add_option("optify_db_version", $optify_db_version);
   
@@ -351,7 +350,7 @@ function optify_script_footer()
                  $token = $res->optify_token;
             }?>
   <script type="text/javascript">
-  // Optify Wordpress Plugin version 1.1.4
+  // Optify Wordpress Plugin version 1.1.5
   var _opt = _opt || [];
   _opt.push([ 'view', '<?php echo $token;?>']);
   (function() {
