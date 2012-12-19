@@ -3,7 +3,7 @@
 Plugin Name: Optify for Wordpress
 Plugin URI: http://www.optify.net/
 Description: The Optify CMS plugin will allow website managers (they do not need to have technical expertise) to quickly, easily, and seamlessly track traffic and leads to their website using the combination of the plugin and the Optify Application.
-Version: 1.1.4
+Version: 1.1.6
 Author: Optify Development
 Author URI: http://www.optify.net/
 License: GPL
@@ -129,19 +129,18 @@ function optify_install()
   // changed created_at to a timestamp data type.
   $sql = "CREATE TABLE IF NOT EXISTS $table_name (
   id mediumint(9) NOT NULL AUTO_INCREMENT,
-  optify_fname VARCHAR(55) NOT NULL,
-  optify_lname VARCHAR(55) NOT NULL,
-  optify_phone int(20) NOT NULL,
+  optify_fname VARCHAR(55) DEFAULT '' NOT NULL,
+  optify_lname VARCHAR(55) DEFAULT '' NOT NULL,
+  optify_phone int(20) DEFAULT '0' NOT NULL,
   optify_email VARCHAR(55) DEFAULT '' NOT NULL,
-  optify_setpwd int(20) NOT NULL,
+  optify_setpwd int(20) DEFAULT '0' NOT NULL,
   optify_token VARCHAR(55) DEFAULT NULL,
   post_forms varchar(16) DEFAULT 'on',
   created_at timestamp,
   UNIQUE KEY id (id)
   );";
 
-  require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-  dbDelta($sql);
+  $wpdb->query($sql);
 
   add_option("optify_db_version", $optify_db_version);
   
@@ -154,11 +153,13 @@ function optify_install()
   if(!empty($existing_token))
   {
   	// if we do have a token, add it to the existing config table.
-  	$table_name = $wpdb->prefix . "optify_form";
-    $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
-    if(empty($row->id))
-      $wpdb->insert($table_name, array('optify_fname' => '', 'optify_lname' => '', 'optify_phone' => ''
-                , 'optify_email' => '', 'optify_setpwd' => '', 'optify_token' => $existing_token));
+    $row = $wpdb->get_row("SELECT id, optify_token FROM {$table_name}");
+    if(empty($row->id)){
+      $sql = "insert into {$table_name} (optify_token)values('{$existing_token}')";
+      $wpdb->query($sql);
+    }else{
+      $wpdb->query("update {$table_name} set optify_token = '{$existing_token}' WHERE id={$row->id}");
+    }
   
   }
 }
@@ -185,9 +186,10 @@ function optify_status_check($verify_schema = false)
   
   if(function_exists('curl_init')){
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
+    curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-test.php");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);           
     curl_setopt($ch, CURLOPT_POST, true);
     // Only post the URL parameter.  This will never create an acccount and only checks for existence.
     $data = 'URL=http://'.$_SERVER['HTTP_HOST'];
@@ -237,12 +239,15 @@ function optify_data_fetch()
 
     if(!empty($optify_existing_token))
     {
-      $table_name = $wpdb->prefix . "optify_form";
-      $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
-      if(empty($row->id))
-        $wpdb->insert($table_name, array('optify_fname' => '', 'optify_lname' => '', 'optify_phone' => ''
-                , 'optify_email' => '', 'optify_setpwd' => '', 'optify_token' => $existing_token));
-      $res = $wpdb->get_row("SELECT optify_token, created_at, post_forms FROM $table_name ");
+      $row = $wpdb->get_row("SELECT id, optify_token FROM {$table_name}");
+      if(empty($row->id)){
+        $sql = "insert into {$table_name} (optify_token)values('{$existing_token}')";
+        $wpdb->query($sql);
+      }else{
+        $wpdb->query("update {$table_name} set optify_token = '{$existing_token}' WHERE id={$row->id}");
+      }
+        
+      $res = $wpdb->get_row("SELECT optify_token, created_at, post_forms FROM {$table_name} ");
     }
   }
    
@@ -280,7 +285,6 @@ function optify_data_fetch()
 function optify_data_insert(){
    global $wpdb;
    global $optify_error_message;
-   
    if(isset($_POST['submit'])){
 
         $f_name     =  ( isset($_POST['optify_fname']) ) ? trim($_POST['optify_fname']) : null;
@@ -294,17 +298,21 @@ function optify_data_insert(){
         $table_name = $wpdb->prefix . "optify_form";
         
         if(!empty($token)){
-          $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
+          $row = $wpdb->get_row("SELECT id, optify_token FROM {$table_name}");
           if(empty($row->id))
             $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
                                      , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
+          else
+            $wpdb->query("update {$table_name} set optify_token = '{$existing_token}' WHERE id={$row->id}");
         }
 
         if(function_exists('curl_init')){
           $ch = curl_init();
-          curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-cms.php");
+          curl_setopt($ch, CURLOPT_URL, "https://aspen.optify.net/register-test.php");
           curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
           curl_setopt($ch, CURLOPT_POST, true);
+          curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); 
+          curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);           
           $data = 'email='.$email.'&URL=http://'.$_SERVER['HTTP_HOST'].'&first_name='.$f_name.'&last_name='.$l_name.'&phone='.$phone.'&password='.$set_psw.'&cms=Wordpress';
       
           curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
@@ -312,6 +320,7 @@ function optify_data_insert(){
           $info = curl_getinfo($ch);
           curl_close($ch);
           $result = json_decode($output);
+          
           $token = $result->token;
           if(!empty($result->message))
             $optify_error_message = '<span style="color:red">'.$result->message.'</span>';
@@ -320,10 +329,11 @@ function optify_data_insert(){
           
           if($result->status == 'success' || !empty($result->token)){
              // Account successfully created or account already exists in Optify
-              $row = $wpdb->get_row("SELECT optify_token FROM {$table_name}");
-              if(empty($row->id))
-                $wpdb->insert($table_name, array('optify_fname' => $f_name, 'optify_lname' => $l_name, 'optify_phone' => $phone
-                                           , 'optify_email' => $email, 'optify_setpwd' => $set_psw, 'optify_token' => $token));
+              $row = $wpdb->get_row("SELECT id, optify_token FROM {$table_name}");
+              if(empty($row->id)){
+                $sql = "insert into {$table_name} (optify_token)values('{$token}')";
+                $wpdb->query($sql);
+              }
           }
         }
     }
@@ -351,7 +361,7 @@ function optify_script_footer()
                  $token = $res->optify_token;
             }?>
   <script type="text/javascript">
-  // Optify Wordpress Plugin version 1.1.4
+  // Optify Wordpress Plugin version 1.1.6
   var _opt = _opt || [];
   _opt.push([ 'view', '<?php echo $token;?>']);
   (function() {
