@@ -3,7 +3,7 @@
 Plugin Name: Optify for Wordpress
 Plugin URI: http://www.optify.net/
 Description: The Optify CMS plugin will allow website managers (they do not need to have technical expertise) to quickly, easily, and seamlessly track traffic and leads to their website using the combination of the plugin and the Optify Application.
-Version: 1.1.6
+Version: 1.1.8
 Author: Optify Development
 Author URI: http://www.optify.net/
 License: GPL
@@ -361,7 +361,7 @@ function optify_script_footer()
                  $token = $res->optify_token;
             }?>
   <script type="text/javascript">
-  // Optify Wordpress Plugin version 1.1.6
+  // Optify Wordpress Plugin version 1.1.8
   var _opt = _opt || [];
   _opt.push([ 'view', '<?php echo $token;?>']);
   (function() {
@@ -372,7 +372,11 @@ function optify_script_footer()
   setTimeout(function(){
     for(var fi = 0; fi < document.forms.length; fi++){
       if(document.forms[fi].innerHTML.indexOf("_opt_paget") < 0)
-        document.forms[fi].innerHTML  += "<input type='hidden' name='_opt_paget' value='" + document.title + "' />";
+        var opt_title = document.createElement('input');
+        opt_title.setAttribute('type', 'hidden');
+        opt_title.setAttribute('name', '_opt_paget');
+        opt_title.setAttribute('value', document.title);
+        document.forms[fi].appendChild(opt_title);
     }
   }, 2000);
   </script>
