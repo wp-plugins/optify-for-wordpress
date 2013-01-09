@@ -372,7 +372,11 @@ function optify_script_footer()
   setTimeout(function(){
     for(var fi = 0; fi < document.forms.length; fi++){
       if(document.forms[fi].innerHTML.indexOf("_opt_paget") < 0)
-        document.forms[fi].innerHTML  += "<input type='hidden' name='_opt_paget' value='" + document.title + "' />";
+        var opt_title = document.createElement('input');
+        opt_title.setAttribute('type', 'hidden');
+        opt_title.setAttribute('name', '_opt_paget');
+        opt_title.setAttribute('value', document.title);
+        document.forms[fi].appendChild(opt_title);
     }
   }, 2000);
   </script>
